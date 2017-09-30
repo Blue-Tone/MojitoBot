@@ -18,15 +18,8 @@ Adafruit_SSD1306 display(-1);
 #define OK_BTN_PIN 3       // 決定ボタンピン
 
 int state = 1; // 
-bool oldIsPush = HIGH; // 前回ボタン状態
-
-/* 
-ボタン
-OLEDディスプレイ
-
-サーボモーター（ラムのワンショットメジャー用)
-リレー（エアーポンプ制御用)
-*/
+bool oldIsSelPush = HIGH; // 前回ボタン状態
+bool oldIsOkPush = HIGH; // 前回ボタン状態
 
 void setup() {
   Serial.begin(9600);
@@ -43,19 +36,20 @@ void setup() {
 }
 
 void loop() {
+  delay(100);
 
   // 選択ボタン
   bool sel = digitalRead(SEL_BTN_PIN);
-  if(HIGH == oldIsPush && LOW == sel){
-    if(state){                      // true == trueと同じ。
+  if(HIGH == oldIsSelPush && LOW == sel){
+    if(state){
       state = false;
     }else{
       state = true;
     }
   }
-  oldIsPush = sel; // 前回のボタン状態を保持
+  oldIsSelPush = sel; // 前回のボタン状態を保持
   
-  // 画面表示をクリア
+  // OLED
   display.clearDisplay();
   
   display.setTextSize(2);
@@ -83,5 +77,23 @@ void loop() {
   display.println("-Double");
 
   display.display();
-  delay(100);
+
+
+  // OKボタン
+  sel = digitalRead(OK_BTN_PIN);
+  if(HIGH == oldIsOkPush && LOW == sel){
+    if(state){
+      state = false;
+    }else{
+      state = true;
+    }
+  }
+  oldIsSelPush = sel; // 前回のボタン状態を保持
+  
+  // 押下時
+    // ★サーボモーター（ラムのワンショットメジャー用)
+    // ★ダブルは2回
+
+    // ★リレー（エアーポンプ制御用)
+    
 }
