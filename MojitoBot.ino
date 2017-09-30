@@ -20,6 +20,7 @@ Adafruit_SSD1306 display(-1);
 #define OK_BTN_PIN 3       // 決定ボタンピン
 #define RUM_PIN 4          // ラム用サーボピン
 #define SODA_PIN 5         // ソーダ用ピン
+#define TONE_PIN 6         // トーン用ピン
 
 #define RUM_TIME 2000      // ラム用サーボの動作時間
 #define RUM_WAIT_TIME 2000 // ラム用サーボの２回目前の待ち時間（ワンショットメジャー補充時間）
@@ -39,6 +40,7 @@ void setup() {
   pinMode(OK_BTN_PIN, INPUT_PULLUP);
   pinMode(SODA_PIN, OUTPUT);
   digitalWrite(SODA_PIN, LOW);
+  pinMode(TONE_PIN, OUTPUT);
 
   // I2Cアドレスは使用するディスプレイに合わせて変更する
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
@@ -53,6 +55,7 @@ void loop() {
   // 選択ボタン
   bool sel = digitalRead(SEL_BTN_PIN);
   if(HIGH == oldIsSelPush && LOW == sel){
+    tone(TONE_PIN, 440, 100);
     if(state){
       state = false;
     }else{
@@ -93,6 +96,7 @@ void loop() {
   // OKボタン
   sel = digitalRead(OK_BTN_PIN);
   if(HIGH == oldIsOkPush && LOW == sel){
+    tone(TONE_PIN, 880, 200);
     // 押下時
     Serial.println("push OK");
 
@@ -109,11 +113,13 @@ void loop() {
       servoRUM.write(1);
       delay(WAIT_TIME);
     }
+    tone(TONE_PIN, 880, 200);
     
     // リレー（エアーポンプ制御用)
     digitalWrite(SODA_PIN, HIGH);
     delay(SODA_TIME);
     digitalWrite(SODA_PIN, LOW);
+    tone(TONE_PIN, 880, 500);
   }
 
   oldIsOkPush = sel; // 前回のボタン状態を保持    
