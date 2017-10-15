@@ -19,12 +19,25 @@ Adafruit_SSD1306 display(-1);
 #define SEL_BTN_PIN 2      // 選択ボタンピン
 #define OK_BTN_PIN 3       // 決定ボタンピン
 #define RUM_PIN 4          // ラム用サーボピン
-#define SODA_PIN 5         // ソーダ用ピン
+#define SODA_PIN 7         // ソーダ用ピン
 #define TONE_PIN 6         // トーン用ピン
+#define NEO_PIXEL_PIN 9    // ネオピクセル用ピン
 
-#define RUM_TIME 2000      // ラム用サーボの動作時間
-#define RUM_WAIT_TIME 2000 // ラム用サーボの２回目前の待ち時間（ワンショットメジャー補充時間）
-#define SODA_TIME 3000     // ソーダ用の動作時間
+// ラム用モーターピン
+#define RUM_MOTOR_A A0
+#define RUM_MOTOR_B A1
+
+// ★長押しでキャリブレーションモード
+// ★ソーダ追加ボタン
+
+#define NUMPIXELS      1
+//Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, STATE_PIN, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEO_PIXEL_PIN, NEO_GRB);
+
+#define RUM_TIME 4500      // ラム用モーターの動作時間
+#define RUM_WAIT_TIME 4000 // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
+#define RUM_RELEASE_TIME 2000 // ラム用モータの戻す動作時間
+#define SODA_TIME 25000    // ソーダ用の動作時間
 #define WAIT_TIME 1000     // 動作の間の時間
 
 int state = 1; // 
@@ -41,12 +54,25 @@ void setup() {
   pinMode(SODA_PIN, OUTPUT);
   digitalWrite(SODA_PIN, LOW);
   pinMode(TONE_PIN, OUTPUT);
+  pinMode(RUM_MOTOR_A, OUTPUT);
+  pinMode(RUM_MOTOR_B, OUTPUT);
+  digitalWrite(RUM_MOTOR_A, LOW);
+  digitalWrite(RUM_MOTOR_B, LOW);
 
   // I2Cアドレスは使用するディスプレイに合わせて変更する
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
 
   servoRUM.attach(RUM_PIN);
   servoRUM.write(1);//初期位置へ
+
+  // NeoPixel
+  pixels.begin();
+  for(int i=0; i < NUMPIXELS; i++){
+    pixels.setPixelColor(i, pixels.Color(0, 10, 0));  
+    Serial.println(i);
+  }
+  pixels.show();
+
 }
 
 void loop() {
@@ -55,6 +81,11 @@ void loop() {
   // 選択ボタン
   bool sel = digitalRead(SEL_BTN_PIN);
   if(HIGH == oldIsSelPush && LOW == sel){
+    // ラムのモーターを逆回転し、戻す
+//    digitalWrite(RUM_MOTOR_A, HIGH);
+//    delay(1000);
+//    digitalWrite(RUM_MOTOR_A, LOW);
+    
     tone(TONE_PIN, 440, 100);
     if(state){
       state = false;
@@ -70,7 +101,7 @@ void loop() {
   display.setTextSize(2);
   display.setTextColor(WHITE);
   display.setCursor(0,0);
-  display.println("   RAM");
+  display.println("   RUM");
   display.setTextSize(1);
   display.println("");
   display.setTextSize(2);
@@ -99,27 +130,47 @@ void loop() {
     tone(TONE_PIN, 880, 200);
     // 押下時
     Serial.println("push OK");
+    pixels.setPixelColor(0, pixels.Color(100, 0, 0));  
+    pixels.show();
 
-    // サーボモーター動作（ラムのワンショットメジャー用)
-    servoRUM.write(179);
+    // モーター動作（ラムのワンショットメジャー用)
+    digitalWrite(RUM_MOTOR_A, HIGH);
     delay(RUM_TIME);
-    servoRUM.write(1);
-    delay(WAIT_TIME);
+    digitalWrite(RUM_MOTOR_A, LOW);
+    delay(3000);
+
+    // ラムのモーターを逆回転し、戻す
+    digitalWrite(RUM_MOTOR_B, HIGH);
+    delay(RUM_RELEASE_TIME);
+    digitalWrite(RUM_MOTOR_B, LOW);
 
     if(!state){
       // ダブルは2回
-      servoRUM.write(179);
+      delay(RUM_WAIT_TIME);
+      digitalWrite(RUM_MOTOR_A, HIGH);
       delay(RUM_TIME);
-      servoRUM.write(1);
+      digitalWrite(RUM_MOTOR_A, LOW);
       delay(WAIT_TIME);
+      delay(3000);
+
+      // ラムのモーターを逆回転し、戻す
+      digitalWrite(RUM_MOTOR_B, HIGH);
+      delay(RUM_RELEASE_TIME);
+      digitalWrite(RUM_MOTOR_B, LOW);
     }
+    
     tone(TONE_PIN, 880, 200);
     
+    pixels.setPixelColor(0, pixels.Color(0, 0, 100));  
+    pixels.show();
+
     // リレー（エアーポンプ制御用)
     digitalWrite(SODA_PIN, HIGH);
     delay(SODA_TIME);
     digitalWrite(SODA_PIN, LOW);
     tone(TONE_PIN, 880, 500);
+    pixels.setPixelColor(0, pixels.Color(1, 1, 1));  
+    pixels.show();
   }
 
   oldIsOkPush = sel; // 前回のボタン状態を保持    
