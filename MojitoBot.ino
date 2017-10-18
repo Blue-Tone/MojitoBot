@@ -19,16 +19,18 @@ Adafruit_SSD1306 display(-1);
 #define SEL_BTN_PIN 2      // 選択ボタンピン
 #define OK_BTN_PIN 3       // 決定ボタンピン
 #define RUM_PIN 4          // ラム用サーボピン
-#define SODA_PIN 7         // ソーダ用ピン
 #define TONE_PIN 6         // トーン用ピン
+#define SODA_PIN 7         // ソーダ用ピン
 #define NEO_PIXEL_PIN 9    // ネオピクセル用ピン
+#define SODA_ADD_BTN_PIN 12 // ソーダ追加ピン
 
 // ラム用モーターピン
 #define RUM_MOTOR_A A0
 #define RUM_MOTOR_B A1
 
-// ★長押しでキャリブレーションモード
-// ★ソーダ追加ボタン
+// ラム用モーター調整用ボタン
+#define MOTOR_CAL_A 10
+#define MOTOR_CAL_B 11
 
 #define NUMPIXELS      1
 //Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, STATE_PIN, NEO_GRB + NEO_KHZ800);
@@ -58,6 +60,10 @@ void setup() {
   pinMode(RUM_MOTOR_B, OUTPUT);
   digitalWrite(RUM_MOTOR_A, LOW);
   digitalWrite(RUM_MOTOR_B, LOW);
+
+  pinMode(SODA_ADD_BTN_PIN, INPUT_PULLUP);
+  pinMode(MOTOR_CAL_A, INPUT_PULLUP);
+  pinMode(MOTOR_CAL_B, INPUT_PULLUP);
 
   // I2Cアドレスは使用するディスプレイに合わせて変更する
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
@@ -173,5 +179,28 @@ void loop() {
     pixels.show();
   }
 
-  oldIsOkPush = sel; // 前回のボタン状態を保持    
+  oldIsOkPush = sel; // 前回のボタン状態を保持
+
+  // ソーダ追加
+  if(LOW == digitalRead(SODA_ADD_BTN_PIN)){
+    Serial.println("add soda");
+    digitalWrite(SODA_PIN, HIGH);
+    delay(100);
+    digitalWrite(SODA_PIN, LOW);
+  }
+
+  // モーター調整
+  if(LOW == digitalRead(MOTOR_CAL_A)){
+    Serial.println("MOTOR_CAL_A");
+    digitalWrite(RUM_MOTOR_A, HIGH);
+    delay(100);
+    digitalWrite(RUM_MOTOR_A, LOW);
+  }
+  
+  if(LOW == digitalRead(MOTOR_CAL_B)){
+    Serial.println("MOTOR_CAL_B");
+    digitalWrite(RUM_MOTOR_B, HIGH);
+    delay(100);
+    digitalWrite(RUM_MOTOR_B, LOW);
+  }
 }
