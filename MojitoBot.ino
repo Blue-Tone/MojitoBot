@@ -1,6 +1,7 @@
 #include<Servo.h>
 Servo servoRUM; // ラム用サーボ
 
+#include <MsTimer2.h>// タイマー割り込み
 #include <Adafruit_NeoPixel.h>
 
 #include <Adafruit_GFX.h>
@@ -32,7 +33,7 @@ Adafruit_SSD1306 display(-1);
 #define MOTOR_CAL_A 10
 #define MOTOR_CAL_B 11
 
-#define NUMPIXELS      1
+#define NUMPIXELS 16
 //Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, STATE_PIN, NEO_GRB + NEO_KHZ800);
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEO_PIXEL_PIN, NEO_GRB);
 
@@ -45,6 +46,26 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEO_PIXEL_PIN, NEO_GRB);
 int state = 1; // 
 bool oldIsSelPush = HIGH; // 前回選択ボタン状態
 bool oldIsOkPush = HIGH;  // 前回OKボタン状態
+
+int ledCount = 0;
+
+// タイマ割り込みコールバック
+void flash() {
+  Serial.println(ledCount);
+  ledCount++;
+  if(NUMPIXELS < ledCount) ledCount = 0;
+  
+  // NeoPixel制御
+  for(int i=0; i < NUMPIXELS; i++){
+    if(i == ledCount){
+      pixels.setPixelColor(i, pixels.Color(0, 10, 0));  
+    }else{
+      pixels.setPixelColor(i, pixels.Color(10, 10, 10));  
+    }
+  }
+  pixels.show();
+  
+}
 
 void setup() {
   Serial.begin(9600);
@@ -79,6 +100,9 @@ void setup() {
   }
   pixels.show();
 
+  // タイマー割り込み
+  MsTimer2::set(100, flash);
+  MsTimer2::start();
 }
 
 void loop() {
