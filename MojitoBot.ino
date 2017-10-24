@@ -22,6 +22,7 @@ Adafruit_SSD1306 display(-1);
 #define RUM_NEO_PIXEL_PIN   8   // ラム用ネオピクセルピン
 #define PANEL_NEO_PIXEL_PIN 9   // パネル用ネオピクセルピン
 #define SODA_NEO_PIXEL_PIN  10  // ソーダ用ネオピクセルピン
+#define SELECT_NEO_PIXEL_PIN 5  // 選択状態表示用ネオピクセルピン 
 
 // ラム用モーター調整用ボタン
 #define MOTOR_CAL_A 11
@@ -33,17 +34,22 @@ Adafruit_SSD1306 display(-1);
 #define RUM_MOTOR_A A0
 #define RUM_MOTOR_B A1
 
-#define RUM_NUMPIXELS   60
-#define PANEL_NUMPIXELS 16
-#define SODA_NUMPIXELS  1
+#define RUM_NUMPIXELS    60
+#define PANEL_NUMPIXELS  16
+#define SODA_NUMPIXELS    1
+#define SELECT_NUMPIXELS  2
+
 
 Adafruit_NeoPixel rumPixels = Adafruit_NeoPixel(RUM_NUMPIXELS, RUM_NEO_PIXEL_PIN, NEO_GRB);
 Adafruit_NeoPixel panelPixels = Adafruit_NeoPixel(PANEL_NUMPIXELS, PANEL_NEO_PIXEL_PIN, NEO_GRB);
 Adafruit_NeoPixel sodaPixels  = Adafruit_NeoPixel(SODA_NUMPIXELS, SODA_NEO_PIXEL_PIN, NEO_GRB);
+Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO_PIXEL_PIN, NEO_GRB);
 
 #define NP_BLUE  rumPixels.Color(0, 0, 50)
 #define NP_GREEN rumPixels.Color(0, 50, 0)
 #define NP_WHITE rumPixels.Color(50, 50, 50)
+#define NP_OFF   rumPixels.Color(0, 0, 0)
+
 
 // 時間関連
 #define RUM_TIME          6000  // ラム用モーターの動作時間
@@ -143,6 +149,7 @@ void setup() {
   rumPixels.begin();
   panelPixels.begin();
   sodaPixels.begin();
+  selectPixels.begin();
 
   for(int i=0; i < RUM_NUMPIXELS; i++){
     rumPixels.setPixelColor(i, NP_GREEN);  
@@ -159,6 +166,11 @@ void setup() {
   }
   sodaPixels.show();
 
+  // シングルを光らせる
+  selectPixels.setPixelColor(0, NP_GREEN);  
+  selectPixels.setPixelColor(1, NP_OFF);  
+  selectPixels.show();
+  
   // タイマー割り込み
   MsTimer2::set(50, flash);
   MsTimer2::start();
@@ -178,9 +190,17 @@ void loop() {
     tone(TONE_PIN, 440, 100);
     if(MODE_SINGLE == mode){
       mode = MODE_DOUBLE;
+      // ダブルを光らせる
+      selectPixels.setPixelColor(0, NP_OFF);  
+      selectPixels.setPixelColor(1, NP_GREEN);  
     }else{
       mode = MODE_SINGLE;
+      // シングルを光らせる
+      selectPixels.setPixelColor(0, NP_GREEN);  
+      selectPixels.setPixelColor(1, NP_OFF);  
     }
+    selectPixels.show();
+
   }
   oldIsSelPush = sel; // 前回のボタン状態を保持
   
