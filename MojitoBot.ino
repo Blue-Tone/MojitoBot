@@ -46,10 +46,11 @@ Adafruit_NeoPixel sodaPixels  = Adafruit_NeoPixel(SODA_NUMPIXELS, SODA_NEO_PIXEL
 #define NP_WHITE rumPixels.Color(50, 50, 50)
 
 // 時間関連
-#define RUM_TIME          4500  // ラム用モーターの動作時間
+#define RUM_TIME          6000  // ラム用モーターの動作時間
 #define RUM_WAIT_TIME     4000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
 #define RUM_RELEASE_TIME  2000  // ラム用モータの戻す動作時間
-#define SODA_TIME         25000 // ソーダ用の動作時間
+//#define SODA_TIME         25000 // ソーダ用の動作時間
+#define SODA_TIME         2000 // ソーダ用の動作時間
 #define WAIT_TIME         1000  // 動作の間の時間
 
 #define MODE_SINGLE true
@@ -73,7 +74,7 @@ byte b = 0;
 
 // タイマ割り込みコールバック
 void flash() {
-  Serial.println(state);
+//  Serial.println(state);
   
   ledCount++;
   if(RUM_NUMPIXELS < ledCount) ledCount = 0;
@@ -106,8 +107,8 @@ void flash() {
       Serial.print(",");
       Serial.println(b);
       // ソーダLedを色変化
-      if(0 == r) b = b+16;
-      if(0 == b) r = r+16;
+      if(0 == r) b = b+32;
+      if(0 == b) r = r+32;
       sodaPixels.setPixelColor(0, sodaPixels.Color(r, 0, b));  
       sodaPixels.show();
       break;
