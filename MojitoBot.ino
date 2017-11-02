@@ -52,9 +52,9 @@ Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO
 
 
 // 時間関連
-#define RUM_TIME          6000  // ラム用モーターの動作時間
-#define RUM_WAIT_TIME     4000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
-#define RUM_RELEASE_TIME  2000  // ラム用モータの戻す動作時間
+#define RUM_TIME          4000  // ラム用モーターの動作時間
+#define RUM_WAIT_TIME     2000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
+#define RUM_RELEASE_TIME  1500  // ラム用モータの戻す動作時間
 //#define SODA_TIME         25000 // ソーダ用の動作時間
 #define SODA_TIME         2000 // ソーダ用の動作時間
 #define WAIT_TIME         1000  // 動作の間の時間
@@ -131,7 +131,7 @@ void setup() {
   pinMode(SEL_BTN_PIN, INPUT_PULLUP);
   pinMode(OK_BTN_PIN, INPUT_PULLUP);
   pinMode(SODA_PIN, OUTPUT);
-  digitalWrite(SODA_PIN, LOW);
+  digitalWrite(SODA_PIN, HIGH);
   pinMode(TONE_PIN, OUTPUT);
   pinMode(RUM_MOTOR_A, OUTPUT);
   pinMode(RUM_MOTOR_B, OUTPUT);
@@ -167,8 +167,8 @@ void setup() {
   sodaPixels.show();
 
   // シングルを光らせる
-  selectPixels.setPixelColor(0, NP_GREEN);  
-  selectPixels.setPixelColor(1, NP_OFF);  
+  selectPixels.setPixelColor(1, NP_GREEN);  
+  selectPixels.setPixelColor(0, NP_OFF);  
   selectPixels.show();
   
   // タイマー割り込み
@@ -191,13 +191,13 @@ void loop() {
     if(MODE_SINGLE == mode){
       mode = MODE_DOUBLE;
       // ダブルを光らせる
-      selectPixels.setPixelColor(0, NP_OFF);  
-      selectPixels.setPixelColor(1, NP_GREEN);  
+      selectPixels.setPixelColor(1, NP_OFF);  
+      selectPixels.setPixelColor(0, NP_GREEN);  
     }else{
       mode = MODE_SINGLE;
       // シングルを光らせる
-      selectPixels.setPixelColor(0, NP_GREEN);  
-      selectPixels.setPixelColor(1, NP_OFF);  
+      selectPixels.setPixelColor(1, NP_GREEN);  
+      selectPixels.setPixelColor(0, NP_OFF);  
     }
     selectPixels.show();
 
@@ -279,9 +279,9 @@ void loop() {
     sodaPixels.show();
 
     // リレー（エアーポンプ制御用)
-    digitalWrite(SODA_PIN, HIGH);
-    delay(SODA_TIME);
     digitalWrite(SODA_PIN, LOW);
+    delay(SODA_TIME);
+    digitalWrite(SODA_PIN, HIGH);
     tone(TONE_PIN, 880, 500);
     state = STATE_IDLE;
     sodaPixels.setPixelColor(0, NP_GREEN);  
@@ -293,9 +293,9 @@ void loop() {
   // ソーダ追加
   if(LOW == digitalRead(SODA_ADD_BTN_PIN)){
     Serial.println("add soda");
-    digitalWrite(SODA_PIN, HIGH);
-    delay(100);
     digitalWrite(SODA_PIN, LOW);
+    delay(100);
+    digitalWrite(SODA_PIN, HIGH);
   }
 
   // モーター調整

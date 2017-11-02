@@ -9,7 +9,7 @@ void setup() {
 }
 
 void loop() {
-  if(LOW == digitalRead(inPin)){
+  if(HIGH == digitalRead(inPin)){
     digitalWrite(outPin, HIGH);
   }else{
     digitalWrite(outPin, LOW);
