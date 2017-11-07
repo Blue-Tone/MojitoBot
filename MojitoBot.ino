@@ -30,15 +30,17 @@ Adafruit_SSD1306 display(-1);
 
 #define SODA_ADD_BTN_PIN 13 // ソーダ追加ボタンピン
 
+#define SODA_SENSOR_START 30 // ソーダ残量センサー
+
+
 // ラム用モーターピン
 #define RUM_MOTOR_A A0
 #define RUM_MOTOR_B A1
 
 #define RUM_NUMPIXELS    60
 #define PANEL_NUMPIXELS  16
-#define SODA_NUMPIXELS    1
+#define SODA_NUMPIXELS    8
 #define SELECT_NUMPIXELS  2
-
 
 Adafruit_NeoPixel rumPixels = Adafruit_NeoPixel(RUM_NUMPIXELS, RUM_NEO_PIXEL_PIN, NEO_GRB);
 Adafruit_NeoPixel panelPixels = Adafruit_NeoPixel(PANEL_NUMPIXELS, PANEL_NEO_PIXEL_PIN, NEO_GRB);
@@ -52,11 +54,11 @@ Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO
 
 
 // 時間関連
-#define RUM_TIME          4000  // ラム用モーターの動作時間
+#define RUM_TIME          5000  // ラム用モーターの動作時間
 #define RUM_WAIT_TIME     2000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
-#define RUM_RELEASE_TIME  1500  // ラム用モータの戻す動作時間
+#define RUM_RELEASE_TIME  2800  // ラム用モータの戻す動作時間
 //#define SODA_TIME         25000 // ソーダ用の動作時間
-#define SODA_TIME         2000 // ソーダ用の動作時間
+#define SODA_TIME         1400 // ソーダ用の動作時間 // 水は1400
 #define WAIT_TIME         1000  // 動作の間の時間
 
 #define MODE_SINGLE true
@@ -70,13 +72,17 @@ enum enumStatus{
   STATE_IDLE,
   STATE_RUM,
   STATE_SODA,
-  };
+};
 
 int state = STATE_IDLE;
 
 byte r = 0;
 byte g = 0;
 byte b = 0;
+
+#define SODA_ADJ_MAX 7
+int sodaAdjCount = 0;
+int sodaAdj[SODA_ADJ_MAX] = {4, 8, };//16 , 32, 64, 128, 256, 512};
 
 // タイマ割り込みコールバック
 void flash() {
@@ -89,7 +95,7 @@ void flash() {
     case STATE_IDLE:
       // ラムLedをゆっくり流す
       for(int i=0; i < RUM_NUMPIXELS; i++){
-        if(i == ledCount){
+        if(i % 20 == ledCount % 20){
           rumPixels.setPixelColor(i, NP_GREEN);  
         }else{
           rumPixels.setPixelColor(i, NP_WHITE);  
@@ -100,7 +106,7 @@ void flash() {
     case STATE_RUM:
       // ラムLedをたくさん流す
       for(int i=0; i < RUM_NUMPIXELS; i++){
-        if(i % 5 == ledCount % 5){
+        if(i % 4 == ledCount % 4){
           rumPixels.setPixelColor(i, NP_GREEN);  
         }else{
           rumPixels.setPixelColor(i, NP_WHITE);  
@@ -115,7 +121,9 @@ void flash() {
       // ソーダLedを色変化
       if(0 == r) b = b+32;
       if(0 == b) r = r+32;
-      sodaPixels.setPixelColor(0, sodaPixels.Color(r, 0, b));  
+      for(int i=0; i < SODA_NUMPIXELS; i++){
+        sodaPixels.setPixelColor(i, sodaPixels.Color(r, 0, b));  
+      }
       sodaPixels.show();
       break;
     default:
@@ -142,6 +150,9 @@ void setup() {
   pinMode(MOTOR_CAL_A, INPUT_PULLUP);
   pinMode(MOTOR_CAL_B, INPUT_PULLUP);
 
+  for(int i=0; i < SODA_ADJ_MAX; i++){
+    pinMode(SODA_SENSOR_START+i, INPUT);
+  }
   // I2Cアドレスは使用するディスプレイに合わせて変更する
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  
 
@@ -162,7 +173,7 @@ void setup() {
   panelPixels.show();
   
   for(int i=0; i < SODA_NUMPIXELS; i++){
-    sodaPixels.setPixelColor(i, NP_GREEN);  
+    sodaPixels.setPixelColor(i, NP_BLUE);  
   }
   sodaPixels.show();
 
@@ -177,6 +188,19 @@ void setup() {
 }
 
 void loop() {
+  // ソーダ残量確認
+  for(int i=0; i < SODA_ADJ_MAX; i++){
+    bool val = digitalRead(SODA_SENSOR_START+i);
+    if(HIGH == val ){
+      sodaAdjCount = i;
+//      Serial.print("HIGH:");
+//      Serial.println(i);
+      break;
+    }else{
+//      Serial.print("LOW :");
+//      Serial.println(i);
+    }
+  }
   delay(100);
 
   // 選択ボタン
@@ -211,7 +235,11 @@ void loop() {
     display.setTextSize(2);
     display.setTextColor(WHITE);
     display.setCursor(0,0);
-    display.println("   RUM");
+
+    display.print(sodaAdjCount);
+    display.print(":");
+    display.println(sodaAdj[sodaAdjCount]);
+    
     display.setTextSize(1);
     display.println("");
     display.setTextSize(2);
@@ -237,6 +265,10 @@ void loop() {
   // OKボタン
   sel = digitalRead(OK_BTN_PIN);
   if(HIGH == oldIsOkPush && LOW == sel){
+    // ソーダの調整カウンタを進める
+//    sodaAdjCount++;
+//    if(SODA_ADJ_MAX == sodaAdjCount) sodaAdjCount = 0;
+
     tone(TONE_PIN, 880, 200);
     state = STATE_RUM;
     // 押下時
@@ -246,22 +278,28 @@ void loop() {
 
     // モーター動作（ラムのワンショットメジャー用)
     digitalWrite(RUM_MOTOR_A, HIGH);
+    tone(TONE_PIN, 880, 100);
     delay(RUM_TIME);
     digitalWrite(RUM_MOTOR_A, LOW);
-    delay(3000);
+    tone(TONE_PIN, 880, 100);
 
     // ラムのモーターを逆回転し、戻す
     digitalWrite(RUM_MOTOR_B, HIGH);
+    tone(TONE_PIN, 880, 100);
     delay(RUM_RELEASE_TIME);
     digitalWrite(RUM_MOTOR_B, LOW);
 
     if(!mode){
       // ダブルは2回
+      tone(TONE_PIN, 880, 100);
       delay(RUM_WAIT_TIME);
       digitalWrite(RUM_MOTOR_A, HIGH);
+      tone(TONE_PIN, 880, 100);
       delay(RUM_TIME);
       digitalWrite(RUM_MOTOR_A, LOW);
+      tone(TONE_PIN, 880, 100);
       delay(WAIT_TIME);
+      tone(TONE_PIN, 880, 100);
       delay(3000);
 
       // ラムのモーターを逆回転し、戻す
@@ -275,17 +313,19 @@ void loop() {
     state = STATE_SODA;
     Serial.println(state);
     
-    sodaPixels.setPixelColor(0, NP_BLUE);  
-    sodaPixels.show();
-
     // リレー（エアーポンプ制御用)
     digitalWrite(SODA_PIN, LOW);
-    delay(SODA_TIME);
+    delay(SODA_TIME + sodaAdj[sodaAdjCount]);
     digitalWrite(SODA_PIN, HIGH);
+    delay(1000);
     tone(TONE_PIN, 880, 500);
     state = STATE_IDLE;
-    sodaPixels.setPixelColor(0, NP_GREEN);  
+    delay(50);
+    for(int i=0; i < SODA_NUMPIXELS; i++){
+      sodaPixels.setPixelColor(i, NP_BLUE);  
+    }
     sodaPixels.show();
+
   }
 
   oldIsOkPush = sel; // 前回のボタン状態を保持
