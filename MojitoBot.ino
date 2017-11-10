@@ -47,11 +47,14 @@ Adafruit_NeoPixel panelPixels = Adafruit_NeoPixel(PANEL_NUMPIXELS, PANEL_NEO_PIX
 Adafruit_NeoPixel sodaPixels  = Adafruit_NeoPixel(SODA_NUMPIXELS, SODA_NEO_PIXEL_PIN, NEO_GRB);
 Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO_PIXEL_PIN, NEO_GRB);
 
-#define NP_BLUE  rumPixels.Color(0, 0, 50)
-#define NP_GREEN rumPixels.Color(0, 50, 0)
-#define NP_WHITE rumPixels.Color(50, 50, 50)
-#define NP_OFF   rumPixels.Color(0, 0, 0)
+//#define LED_MAX 1
 
+#define LED_MAX 255
+//#define LED_MAX 50
+#define NP_BLUE  rumPixels.Color(0, 0, LED_MAX)
+#define NP_GREEN rumPixels.Color(0, LED_MAX, 0)
+#define NP_WHITE rumPixels.Color(LED_MAX, LED_MAX, LED_MAX)
+#define NP_OFF   rumPixels.Color(0, 0, 0)
 
 // 時間関連
 #define RUM_TIME          5000  // ラム用モーターの動作時間
@@ -80,9 +83,15 @@ byte r = 0;
 byte g = 0;
 byte b = 0;
 
+// ソーダ量調整
 #define SODA_ADJ_MAX 7
 int sodaAdjCount = 0;
 int sodaAdj[SODA_ADJ_MAX] = {4, 8, };//16 , 32, 64, 128, 256, 512};
+
+// パネルNeoPixel用
+int panelTarget = 0;
+int panelLedValList[PANEL_NUMPIXELS] = {0};
+int panelLedSpeed = 16;
 
 // タイマ割り込みコールバック
 void flash() {
@@ -129,10 +138,57 @@ void flash() {
     default:
       break;
   }  
+
+  // パネル
+  bool isDone = true;
+  for(int i=0; i < PANEL_NUMPIXELS; i++){
+    // ターゲットが白。
+    // その周りは半分づつ
+    // 緑は常にMAX
+    // 減るのは早い。増えるのゆっくり
+
+    int pos = abs(i-panelTarget);       // ターゲットからの距離
+    int targetVal = LED_MAX / (pos + 1);  // 目標の色
+
+    // 
+    if(targetVal != panelLedValList[i]){
+      if(targetVal > panelLedValList[i]){
+        panelLedValList[i] = panelLedValList[i] + panelLedSpeed / 2;
+      }else{
+        panelLedValList[i] = panelLedValList[i] - panelLedSpeed;
+      }
+      if( abs(targetVal - panelLedValList[i])-1 < panelLedSpeed) panelLedValList[i] = targetVal;
+      if(targetVal != panelLedValList[i]) isDone = false;
+    }
+
+/*    Serial.print(i);
+    Serial.print("Done=");
+    Serial.print(isDone);
+    Serial.print(",targ");
+    Serial.print(targetVal);
+    Serial.print(",List");
+    Serial.println(panelLedValList[i]);
+*/    
+    panelPixels.setPixelColor(i, panelPixels.Color(panelLedValList[i], LED_MAX, panelLedValList[i]));  
+  }
+  panelPixels.show();
+  
+  // 完了なら次のターゲットとスピード設定
+  if(isDone){
+    panelLedSpeed = random(4,32);
+//    panelLedSpeed = random(4,16);
+    panelTarget = random(0,PANEL_NUMPIXELS-1);
+  }
+/*    Serial.print("Speed=");
+    Serial.print(panelLedSpeed);
+
+    Serial.print(", Target=");
+    Serial.println(panelTarget);  
+*/
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("start setup()");
   
   // ピン設定
