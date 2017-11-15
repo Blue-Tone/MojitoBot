@@ -51,7 +51,8 @@ Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO
 
 #define LED_MAX 255
 //#define LED_MAX 50
-#define LED_LOW 10
+//#define LED_LOW 10
+#define LED_LOW 255
 #define NP_BLUE  rumPixels.Color(0, 0, LED_MAX)
 #define NP_GREEN rumPixels.Color(0, LED_MAX, 0)
 #define NP_WHITE rumPixels.Color(LED_MAX, LED_MAX, LED_MAX)
@@ -63,11 +64,16 @@ Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO
 
 
 // 時間関連
-#define RUM_TIME          2500  // ラム用モーターの動作時間
+//#define RUM_TIME          2500  // ラム用モーターの動作時間
+#define RUM_TIME          1800  // ラム用モーターの動作時間
 #define RUM_WAIT_TIME     3000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
-#define RUM_RELEASE_TIME  1800  // ラム用モータの戻す動作時間
-#define SODA_TIME         1400 // ソーダ用の動作時間 // 水は1400
+//#define RUM_RELEASE_TIME  1800  // ラム用モータの戻す動作時間
+#define RUM_RELEASE_TIME  1300  // ラム用モータの戻す動作時間
+//#define SODA_TIME         1400 // ソーダ用の動作時間 // 水は1400
+#define SODA_TIME         1900 // ソーダ用の動作時間 // 水は1400
 #define WAIT_TIME         1000  // 動作の間の時間
+
+#define RUM_POW 180
 
 #define MODE_SINGLE true
 #define MODE_DOUBLE false
@@ -348,7 +354,8 @@ void loop() {
     rumPixels.show();
 
     // モーター動作（ラムのワンショットメジャー用)
-    digitalWrite(RUM_MOTOR_A, HIGH);
+//    digitalWrite(RUM_MOTOR_A, HIGH);
+    analogWrite(RUM_MOTOR_A, RUM_POW);
     tone(TONE_PIN, 880, 100);
     delay(RUM_TIME);
     digitalWrite(RUM_MOTOR_A, LOW);
@@ -366,7 +373,8 @@ void loop() {
       // ダブルは2回
       tone(TONE_PIN, 880, 100);
       delay(RUM_WAIT_TIME);
-      digitalWrite(RUM_MOTOR_A, HIGH);
+//      digitalWrite(RUM_MOTOR_A, HIGH);
+      analogWrite(RUM_MOTOR_A, RUM_POW);
       tone(TONE_PIN, 880, 100);
       delay(RUM_TIME);
       digitalWrite(RUM_MOTOR_A, LOW);
