@@ -29,9 +29,7 @@ Adafruit_SSD1306 display(-1);
 #define MOTOR_CAL_B 12
 
 #define SODA_ADD_BTN_PIN 13 // ソーダ追加ボタンピン
-
-#define SODA_SENSOR_START A8 // ソーダ残量センサー
-
+#define SODA_SENSOR_START A8 // ソーダ残量センサー開始ピン
 
 // ラム用モーターピン
 #define RUM_MOTOR_A A0
@@ -68,12 +66,13 @@ Adafruit_NeoPixel selectPixels  = Adafruit_NeoPixel(SELECT_NUMPIXELS, SELECT_NEO
 #define RUM_TIME          1800  // ラム用モーターの動作時間
 #define RUM_WAIT_TIME     3000  // ラム用モーターの２回目前の待ち時間（ワンショットメジャー補充時間）
 //#define RUM_RELEASE_TIME  1800  // ラム用モータの戻す動作時間
-#define RUM_RELEASE_TIME  1300  // ラム用モータの戻す動作時間
+#define RUM_RELEASE_TIME  1000  // ラム用モータの戻す動作時間
 //#define SODA_TIME         1400 // ソーダ用の動作時間 // 水は1400
 #define SODA_TIME         1900 // ソーダ用の動作時間 // 水は1400
 #define WAIT_TIME         1000  // 動作の間の時間
 
 #define RUM_POW 180
+#define RUM_REL_POW 100
 
 #define MODE_SINGLE true
 #define MODE_DOUBLE false
@@ -364,7 +363,7 @@ void loop() {
     delay(RUM_WAIT_TIME);
     
     // ラムのモーターを逆回転し、戻す
-    digitalWrite(RUM_MOTOR_B, HIGH);
+    digitalWrite(RUM_MOTOR_B, RUM_REL_POW);
     tone(TONE_PIN, 880, 100);
     delay(RUM_RELEASE_TIME);
     digitalWrite(RUM_MOTOR_B, LOW);
@@ -383,7 +382,7 @@ void loop() {
       tone(TONE_PIN, 880, 100);
 
       // ラムのモーターを逆回転し、戻す
-      digitalWrite(RUM_MOTOR_B, HIGH);
+      digitalWrite(RUM_MOTOR_B, RUM_REL_POW);
       delay(RUM_RELEASE_TIME);
       digitalWrite(RUM_MOTOR_B, LOW);
     }
